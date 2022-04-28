@@ -1,34 +1,25 @@
 
 
     <div class="jumbotron">
-        <h1>PA03: Course Finder Fall20-Spr21 </h1>
+        <h1>Lucian's App: Movie Finder </h1>
         <p></p>
     </div>
 
     <p class="p-3 m-3 border border-primary bg-light">
-        The goal of this assignment is to write an app that will let
-        students pick their courses for the year. Since we don't have 
-        the data for this year (due to workday issues), we will use the 
-        2020-2021 Academic year data. You must signup or login to see
-        the courses and create your schedule.
+       Type in the name of a movie to get some info about it!
     </p>
     
     <% if (true || loggedIn) {%>  
-        <form method="post" action="/courses/bySubject">
-            Show Courses by Subject: 
-              <input type="text" name="subject" 
-                     placeholder="e.g. COSI">
+        <form method="post" action="/movies/byTitle">
+            Show movies by Title: 
+              <input type="text" name="title" 
+                     placeholder="e.g. Shrek">
             <input type="submit">
         </form>
         <br>
-        <form method="post" action="/courses/byInst">
-            Show Courses by Instructor Email: 
-            <input type="text" name="email" 
-                   placeholder="e.g. tjhickey">
-            <input type="submit">
-        </form>
+        
         <br>
-        <a href="/schedule/show">Show Schedule</a>
+        
     <% } %>
 
 

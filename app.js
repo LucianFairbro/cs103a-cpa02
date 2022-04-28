@@ -19,7 +19,7 @@ const axios = require("axios")
 //  Loading models
 // *********************************************************** //
 const ToDoItem = require("./models/ToDoItem")
-const Course = require('./models/Course')
+const Movie= require('./models/Movie')
 const Schedule = require('./models/Schedule')
 
 // *********************************************************** //
@@ -118,63 +118,12 @@ app.get("/about", (req, res, next) => {
 /*
     ToDoList routes
 */
-app.get('/todo',
-  isLoggedIn,   // redirect to /login if user is not logged in
-  async (req,res,next) => {
-    try{
-      let userId = res.locals.user._id;  // get the user's id
-      let items = await ToDoItem.find({userId:userId}); // lookup the user's todo items
-      res.locals.items = items;  //make the items available in the view
-      res.render("toDo");  // render to the toDo page
-    } catch (e){
-      next(e);
-    }
-  }
-  )
 
-  app.post('/todo/add',
-  isLoggedIn,
-  async (req,res,next) => {
-    try{
-      const {title,description} = req.body; // get title and description from the body
-      const userId = res.locals.user._id; // get the user's id
-      const createdAt = new Date(); // get the current date/time
-      let data = {title, description, userId, createdAt,} // create the data object
-      let item = new ToDoItem(data) // create the database object (and test the types are correct)
-      await item.save() // save the todo item in the database
-      res.redirect('/todo')  // go back to the todo page
-    } catch (e){
-      next(e);
-    }
-  }
-  )
+  
 
-  app.get("/todo/delete/:itemId",
-    isLoggedIn,
-    async (req,res,next) => {
-      try{
-        const itemId=req.params.itemId; // get the id of the item to delete
-        await ToDoItem.deleteOne({_id:itemId}) // remove that item from the database
-        res.redirect('/todo') // go back to the todo page
-      } catch (e){
-        next(e);
-      }
-    }
-  )
+ 
 
-  app.get("/todo/completed/:value/:itemId",
-  isLoggedIn,
-  async (req,res,next) => {
-    try{
-      const itemId=req.params.itemId; // get the id of the item to delete
-      const completed = req.params.value=='true';
-      await ToDoItem.findByIdAndUpdate(itemId,{completed}) // remove that item from the database
-      res.redirect('/todo') // go back to the todo page
-    } catch (e){
-      next(e);
-    }
-  }
-)
+
 
 /* ************************
   Functions needed for the course finder routes
@@ -252,114 +201,31 @@ app.get('/upsertDB',
 )
 
 
-app.post('/courses/bySubject',
+app.post('/movies/byTitle',
   // show list of courses in a given subject
   async (req,res,next) => {
-    const {subject} = req.body;
-    const courses = await Course.find({subject:subject,independent_study:false}).sort({term:1,num:1,section:1})
+    const {title} = req.body;
+    const movies = await Movie.findOne({title:title})
     
-    res.locals.courses = courses
+    res.locals.movies = movies
     //res.locals.times2str = times2str
-    res.locals.times2str = courses.strTimes //step3
+    
     //
     //res.json(courses)
     res.render('courselist')
   }
 )
 
-app.get('/courses/show/:courseId',
-  // show all info about a course given its courseid
-  async (req,res,next) => {
-    const {courseId} = req.params;
-    const course = await Course.findOne({_id:courseId})
-    res.locals.course = course
-    //res.locals.times2str = times2str
-    res.locals.times2str = course.strTimes //step3
-    //
-    //res.json(course)
-    res.render('course')
-  }
-)
 
-app.get('/courses/byInst/:email',
-  // show a list of all courses taught by a given faculty
-  async (req,res,next) => {
-    const email = req.params.email+"@brandeis.edu";
-    const courses = await Course.find({instructor:email,independent_study:false})
-    //res.json(courses)
-    res.locals.courses = courses
-    res.render('courselist')
-  } 
-)
 
-app.post('/courses/byInst',
-  // show courses taught by a faculty send from a form
-  async (req,res,next) => {
-    const email = req.body.email+"@brandeis.edu";
-    const courses = 
-       await Course
-               .find({instructor:email,independent_study:false})
-               .sort({term:1,num:1,section:1})
-    //res.json(courses)
-    res.locals.courses = courses
-    //res.locals.times2str = times2str
-    res.locals.times2str = courses.strTimes //step3
-    //
-    res.render('courselist')
-  }
-)
+
 
 app.use(isLoggedIn)
 
-app.get('/addCourse/:courseId',
-  // add a course to the user's schedule
-  async (req,res,next) => {
-    try {
-      const courseId = req.params.courseId
-      const userId = res.locals.user._id
-      // check to make sure it's not already loaded
-      const lookup = await Schedule.find({courseId,userId})
-      if (lookup.length==0){
-        const schedule = new Schedule({courseId,userId})
-        await schedule.save()
-      }
-      res.redirect('/schedule/show')
-    } catch(e){
-      next(e)
-    }
-  })
 
-app.get('/schedule/show',
-  // show the current user's schedule
-  async (req,res,next) => {
-    try{
-      const userId = res.locals.user._id;
-      const courseIds = 
-         (await Schedule.find({userId}))
-                        .sort(x => x.term)
-                        .map(x => x.courseId)
-      res.locals.courses = await Course.find({_id:{$in: courseIds}})
-      res.render('schedule')
-    } catch(e){
-      next(e)
-    }
-  }
-)
 
-app.get('/schedule/remove/:courseId',
-  // remove a course from the user's schedule
-  async (req,res,next) => {
-    try {
-      await Schedule.remove(
-                {userId:res.locals.user._id,
-                 courseId:req.params.courseId})
-      res.redirect('/schedule/show')
 
-    } catch(e){
-      next(e)
-    }
-  }
-)
+
 
 
 // here we catch 404 errors and forward to error handler
@@ -383,7 +249,7 @@ app.use(function(err, req, res, next) {
 //  Starting up the server!
 // *********************************************************** //
 //Here we set the port to use between 1024 and 65535  (2^16-1)
-const port = "5000";
+const port = "5001";
 app.set("port", port);
 
 // and now we startup the server listening on that port
